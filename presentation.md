@@ -34,235 +34,120 @@ writes to the csv stream.
 
 -> # Example 1 <-
 
-Lets read data from the dataset "Wind data from NASA" and write that to
-a file.
+Lets read data from a dataset db in this case is a genome sequence and which 
+is in a file - lets pretend that this is our database, will will pass this into
+a transform steam that does some work; as we are testing the streams performance
+we will just write a double to a buffer so we can ignore it in future output.
 
 > Open 1.js
 
-# first-level
+-------------------------------------------------
+
+-> # Getting slow code <-
+
+To benchmark we shall pipe this together and close when we are finished,
+The first iteration I ran our function when a signal was sent to it, so I could
+record what I needed from linux perf, without capturing the bootstrap of the app.
+
+    process.on('SIGINT', () => doStuff);
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Finding slow code <-
 
-Second-level headers can be prefixed by *##* or
-underlined by *---*.
+Running this with linux perf:
 
-second-level
-\------------
+    perf record -e cycles:u -g -p $PID
 
-becomes
+or 
 
-second-level
-------------
+    perf record -e cycles:u -g -- node --perf-basic-prof 1.js
 
+then:
 
--------------------------------------------------
+    perf script >! intermediate.out
 
--> # Supported markdown formatting's <-
-
-Inline codes are surrounded with backticks.
-
-C program starts with \`main()\`.
-
-becomes
-
-C program starts with `main()`.
+To get the intermediate output.
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Flamegraphs! <-
 
-Code blocks are automatically detected by 4
-spaces at the beginning of a line.
+    stackvis perf < intermediate.out >! flamegraph.html
+    open flamegraph.html
 
-Tabs are automatically expanded to 4 spaces
-while parsing the input.
-
-\    int main(int argc, char \*argv[]) {
-\        printf("%s\\n", "Hello world!");
-\    }
-
-becomes
-
-    int main(int argc, char *argv[]) {
-        printf("%s\n", "Hello world!");
-    }
+> Open flamegraph.html
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Array.shift?? <-
 
-Quotes are auto-detected by preceding *>*.
-
-Multiple *>* are interpreted as nested quotes.
-
-\> quote
-\>> nested quote 1
-\> > nested quote 2
-
-becomes
-
-> quote
->> nested quote 1
-> > nested quote 2
+We are spending a lot of time in the internal Array.shift methods, namly in the
+`fromList` function within `_stream_readable.js` in node core.
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # CORE??? <-
 
-Inline highlighting is supported as followed:
+Lets look at *core*!
 
-\- *\** colors text as red
-\- *\_* underlines text
-
-\_some\_ \*highlighted\* \_\*text\*\_
-
-becomes
-
-_some_ *highlighted* _*text*_
+> ./node-stream-readable.sh
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Shifts are slow? <-
 
-Backslashes force special markdown characters
-like *\**, *\_*, *#* and *>* to be printed as normal
-characters.
+Array.shift is slow, *why*?
 
-\\\*special\\\*
+A -> B -> C;
 
-becomes
+Remove A and you will have to re-create the whole tree\*.
 
-\*special\*
+> Open image-1.png
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # /r/popping <-
 
-Leading *\** or *-* indicate lists.
+Lets test the speed difference between pop and shift.
 
-list
-\* major
-\    - minor
-\        - \*important\*
-\          detail
-\    - minor
+> Open 2.js
 
-becomes
-
-list
-* major
-    - minor
-        - *important*
-          detail
-    - minor
+> Note: we are not testing for correctness here.
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Increase Iterations! <-
 
-A single *\<br\>* or *^* in a line indicates mdp
-to stop the output on that position.
-
-This can be used to show bullet points
-line by line.
-
-*\<br\>* is also not displayed in HTML converted
-output.
-
-Agenda
-<br>
-* major
-<br>
-    * minor
-<br>
-* major
-  ^
-    * minor
-      ^
-        * detail
+> Open 3.js
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # View the results <-
 
-Leading *->* indicates centering.
-
-\-> # test <-
-\-> ## test <-
-\-> test
-\-> \_\*test\*\_ <-
-
-becomes
-
--> # test <-
--> ## test <-
--> test
--> _*test*_ <-
+> Open: image-2.png
 
 -------------------------------------------------
 
--> # Supported markdown formatting <-
+-> # Recap <-
 
-URL in pandoc style are supported:
+We can improve the performance here, but what will happen with the rest of the
+algorithm when you reverse how it works?
 
-\[Google](http://www.google.com/)
-
-becomes
-
-[Google](http://www.google.com/)
+Benchmark everything, not just functions.
 
 -------------------------------------------------
 
--> ## More information about markdown <-
+-> # Flamegraphs <-
 
-can be found in the [markdown documentation](http://daringfireball.net/projects/markdown/).
+Are a tool in our toolbox!
 
--------------------------------------------------
-
--> # Support for UTF-8 special characters <-
-
-Here are some examples.
-
-ae = ä, oe = ö, ue = ü, ss = ß
-upsilon = Ʊ, phi = ɸ
-
-▛▀▀▀▀▀▀▀▀▀▜
-▌rectangle▐
-▙▄▄▄▄▄▄▄▄▄▟
-
-
--------------------------------------------------
-
--> # Suspend your presentation for hands-on examples <-
-
-Use *Ctrl + z* to suspend the presentation.
-
-Use *fg* to resume it.
-
--------------------------------------------------
-
--> # Convert your presentation to PDF <-
-
-To publish your presentation later on, you may
-want to convert it to PDF.
-
-This can be achieved by two additional tools:
-
-\- *markdown* to convert to HTML
-\- *wkhtmltopdf* to convert from HTML to PDF
-
-After installing them, you can simply type:
-
-    $ markdown sample.md | wkhtmltopdf - sample.pdf
+Can be useful, but will not help with all problems.
 
 -------------------------------------------------
 
 -> ## Last words <-
 
-I hope you like *mdp*. But be aware that it is
-still in alpha status.
+Thanks!
 
-If you observe strange behavior, feel free to
-open an issue on [GitHub](https://github.com/visit1985/mdp).
+> Perf Workshop && NodeConf Barcelona
