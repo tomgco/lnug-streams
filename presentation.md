@@ -107,7 +107,7 @@ Remove A and you will have to re-create the whole tree\*.
 
 -------------------------------------------------
 
--> # /r/popping <-
+-> # Pop pop pop pop <-
 
 Lets test the speed difference between pop and shift.
 
